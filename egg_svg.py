@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 egg_svg.py v6
-- 한판 겹치기 그림자: 판 <g> 완전히 바깥, 절대좌표, 레이어 순서 보장
-- 레이어 순서: 아래판 → 그림자 → 위판
+- 그림자 구조: 두판 SVG 분석 기반
+  레이어 순서: 아래판g → 그림자rect → 위판g
+  그림자: 위판 y기준 +246.2px, height=1000, opacity=0.2
 """
 
 import sys, re, os
@@ -37,13 +38,15 @@ ROW_CLIP_X = [(ROW_EGG_RIGHT[i] + (ROW_EGG_RIGHT[i+1] - EGG_WIDTH)) / 2
 TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)) / 2
                    for i in range(9)] + [TRAY_W + 5]
 
-TRAY_STACK_OFFSET    = 304.87
-TRAY_SHADOW_Y_OFFSET = 246.2   # 위판 기준 그림자 시작 y
-TRAY_SHADOW_H        = 1000    # 그림자 높이 (아래판 전체 커버)
-TRAY_SHADOW_OPACITY  = 0.2
-TRAY_GAP             = 40
-GROUP_GAP            = 60
-ITEM_GAP             = 20
+# 두판 SVG 분석값
+TRAY_STACK_OFFSET = 304.87   # 아래판y - 위판y
+TRAY_SHADOW_Y_OFFSET = 246.2 # 위판 기준 그림자 시작 y
+TRAY_SHADOW_H = 1000         # 그림자 높이 (아래판 전체 커버)
+TRAY_SHADOW_OPACITY = 0.2    # st4 클래스 opacity
+
+TRAY_GAP  = 40
+GROUP_GAP = 60
+ITEM_GAP  = 20
 
 _file_cache = {}
 _counter    = [0]
@@ -244,7 +247,6 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
     if not active:
         raise ValueError("아이템이 없습니다.")
 
-    # ── 섹션별 크기 계산 ───────────────────────────────────────────────────
     tray_items = groups['한판']
     row_items  = groups['한줄']
     solo_items = groups['낱개']
@@ -272,8 +274,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
         solo_block_w = cols * SOLO_W + (cols - 1) * (ITEM_GAP * 0.5)
         solo_block_h = rows * SOLO_H + (rows - 1) * (ITEM_GAP * 0.5)
 
-    section_widths  = []
-    section_heights = []
+    section_widths, section_heights = [], []
     if tray_items:
         section_widths.append(tray_block_w)
         section_heights.append(tray_block_h)
@@ -287,21 +288,13 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
     total_w = sum(section_widths) + GROUP_GAP * (len(section_widths) - 1)
     total_h = max(section_heights) if section_heights else 100
 
-    # ── 섹션별 x 시작점 ───────────────────────────────────────────────────
+    # 섹션별 x 시작점
     cx = 0.0
-    tray_x = 0.0
-    row_x  = 0.0
-    solo_x = 0.0
-
-    si = 0
+    tray_x = row_x = solo_x = 0.0
     if tray_items:
-        tray_x = cx
-        cx += tray_block_w + GROUP_GAP
-        si += 1
+        tray_x = cx; cx += tray_block_w + GROUP_GAP
     if row_items:
-        row_x = cx
-        cx += row_block_w + GROUP_GAP
-        si += 1
+        row_x = cx; cx += row_block_w + GROUP_GAP
     if solo_items:
         solo_x = cx
 
@@ -310,37 +303,39 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
     # ── 한판 배치 ──────────────────────────────────────────────────────────
     if tray_items:
         n = len(tray_items)
-        cy_tray = (total_h - tray_block_h) / 2  # 수직 중앙 정렬 오프셋
+        cy_tray = (total_h - tray_block_h) / 2
 
         if tray_stack and n > 1:
-            # 겹침 모드
-            # 레이어 순서: 판[0](맨아래) → 그림자[0] → 판[1] → 그림자[1] → ... → 판[n-1](맨위)
+            # 레이어 순서: 아래판(i=0) → 그림자 → 위판(i=n-1)
+            # i=0: 맨 아래판 (y가 가장 큼)
+            # i=n-1: 맨 위판 (y가 가장 작음, 화면 위쪽)
             for i, (elems, w, h) in enumerate(tray_items):
-                # i=0: 맨 아래판, i=n-1: 맨 위판
+                # 위판(i=n-1)의 y = cy_tray
+                # 아래판일수록 y가 커짐
                 y_offset = cy_tray + (n - 1 - i) * TRAY_STACK_OFFSET
                 inner = '\n    '.join(elems)
+
+                # 아래판 먼저 렌더 (z-order: 맨 아래)
                 final_parts.append(
                     f'  <g transform="translate({tray_x:.3f},{y_offset:.3f})">\n'
                     f'    {inner}\n'
                     f'  </g>'
                 )
-                # 그림자: i번째 판 렌더 직후, 바로 위 판(i+1) 렌더 전
-                # shadow_y = 위판(i+1) y좌표 + TRAY_SHADOW_Y_OFFSET
-                # 맨 위판(i=n-1)은 그림자 없음
+
+                # 그림자: 이 판 바닥 기준 -50px 위치에서 시작, height=200
+                # y = y_offset + TRAY_H - 50
                 if i < n - 1:
-                    top_tray_y = cy_tray + (n - 1 - (i + 1)) * TRAY_STACK_OFFSET
-                    shadow_y = top_tray_y + TRAY_SHADOW_Y_OFFSET
+                    shadow_y = y_offset + TRAY_H - 50
                     final_parts.append(
                         f'  <rect'
                         f' x="{tray_x:.3f}"'
                         f' y="{shadow_y:.3f}"'
                         f' width="{TRAY_W:.3f}"'
-                        f' height="{TRAY_SHADOW_H}"'
+                        f' height="200"'
                         f' fill="black"'
                         f' opacity="{TRAY_SHADOW_OPACITY}"/>'
                     )
         else:
-            # 간격 모드
             cy = cy_tray
             for elems, w, h in tray_items:
                 inner = '\n    '.join(elems)
