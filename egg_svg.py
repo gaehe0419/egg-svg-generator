@@ -332,7 +332,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                         f' x="{tray_x:.3f}"'
                         f' y="{shadow_y:.3f}"'
                         f' width="{TRAY_W:.3f}"'
-                        f' height="200"'
+                        f' height="250"'
                         f' fill="black"'
                         f' opacity="{TRAY_SHADOW_OPACITY}"/>'
                     )
