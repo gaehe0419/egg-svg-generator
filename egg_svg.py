@@ -37,10 +37,13 @@ ROW_CLIP_X = [(ROW_EGG_RIGHT[i] + (ROW_EGG_RIGHT[i+1] - EGG_WIDTH)) / 2
 TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)) / 2
                    for i in range(9)] + [TRAY_W + 5]
 
-TRAY_STACK_OFFSET = 304.87
-TRAY_GAP          = 40
-GROUP_GAP         = 60
-ITEM_GAP          = 20
+TRAY_STACK_OFFSET    = 304.87
+TRAY_SHADOW_Y_OFFSET = 246.2   # 위판 기준 그림자 시작 y
+TRAY_SHADOW_H        = 1000    # 그림자 높이 (아래판 전체 커버)
+TRAY_SHADOW_OPACITY  = 0.2
+TRAY_GAP             = 40
+GROUP_GAP            = 60
+ITEM_GAP             = 20
 
 _file_cache = {}
 _counter    = [0]
@@ -321,19 +324,20 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                     f'    {inner}\n'
                     f'  </g>'
                 )
-                # 그림자: 이 판 바로 다음, 위판 렌더링 전
-                # 위치: 이 판의 하단 근처 (판 바닥 - 40px 위부터 40px)
+                # 그림자: i번째 판 렌더 직후, 바로 위 판(i+1) 렌더 전
+                # shadow_y = 위판(i+1) y좌표 + TRAY_SHADOW_Y_OFFSET
                 # 맨 위판(i=n-1)은 그림자 없음
                 if i < n - 1:
-                    shadow_y = y_offset + TRAY_H - 40
+                    top_tray_y = cy_tray + (n - 1 - (i + 1)) * TRAY_STACK_OFFSET
+                    shadow_y = top_tray_y + TRAY_SHADOW_Y_OFFSET
                     final_parts.append(
                         f'  <rect'
-                        f' x="{tray_x + TRAY_W*0.025:.3f}"'
+                        f' x="{tray_x:.3f}"'
                         f' y="{shadow_y:.3f}"'
-                        f' width="{TRAY_W*0.95:.3f}"'
-                        f' height="40"'
-                        f' fill="black" opacity="0.12"'
-                        f' rx="20" ry="20"/>'
+                        f' width="{TRAY_W:.3f}"'
+                        f' height="{TRAY_SHADOW_H}"'
+                        f' fill="black"'
+                        f' opacity="{TRAY_SHADOW_OPACITY}"/>'
                     )
         else:
             # 간격 모드
