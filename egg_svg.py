@@ -325,8 +325,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                     shadow_rects.append(
                         f'  <rect x="0" y="{shadow_y:.3f}" '
                         f'width="{TRAY_W}" height="{shadow_h:.3f}" '
-                        f'fill="black" opacity="{SHADOW_OPACITY}" '
-                        f'transform="translate(0,{(n-1-i)*TRAY_STACK_OFFSET:.3f})"/>'
+                        f'fill="black" opacity="{SHADOW_OPACITY}"/>'
                     )
         else:
             # 간격 모드: 세로 나열
@@ -370,17 +369,23 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
         solo_block_w = cols * SOLO_W + (cols - 1) * (ITEM_GAP * 0.5)
         solo_block_h = rows * SOLO_H + (rows - 1) * (ITEM_GAP * 0.5)
 
+        solo_inner = []
         for idx, (elems, w, h) in enumerate(solo_items):
             col_i = idx % cols
             row_i = idx // cols
             sx = col_i * (SOLO_W + ITEM_GAP * 0.5)
             sy = row_i * (SOLO_H + ITEM_GAP * 0.5)
-            inner = '\n    '.join(elems)
-            body_parts.append(
-                f'  <g transform="translate(SOLOCX,SOLOCY)">\n'
-                f'    {inner}\n'
-                f'  </g>'.replace('SOLOCY', f'{sy:.3f}')
+            inner = '\n      '.join(elems)
+            solo_inner.append(
+                f'    <g transform="translate({sx:.3f},{sy:.3f})">\n'
+                f'      {inner}\n'
+                f'    </g>'
             )
+        body_parts.append(
+            f'  <g transform="translate(SOLOCX,SOLOCY_CENTER)">\n'
+            + '\n'.join(solo_inner) + '\n'
+            + f'  </g>'
+        )
 
     # ── 전체 캔버스 계산 ───────────────────────────────────────────────────
     section_widths  = []
@@ -426,15 +431,9 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
             si_solo = len([u for u in active if u != '낱개'])
             cx_solo = sum(section_widths[:si_solo]) + GROUP_GAP * si_solo
             cy_center = (total_h - solo_block_h) / 2
-            part = part.replace(
-                'translate(SOLOCX,',
-                f'translate({cx_solo:.3f},'
-            )
-            part = re.sub(
-                r'translate\(' + f'{cx_solo:.3f}' + r',([\d.]+)\)',
-                lambda m: f'translate({cx_solo:.3f},{float(m.group(1))+cy_center:.3f})',
-                part
-            )
+            part = (part
+                    .replace('SOLOCX', f'{cx_solo:.3f}')
+                    .replace('SOLOCY_CENTER', f'{cy_center:.3f}'))
             final_parts.append(part)
         else:
             # 한판 파트 — 수직 중앙 정렬
