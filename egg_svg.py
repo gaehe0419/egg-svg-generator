@@ -326,7 +326,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                 # y = 위판_y_offset + TRAY_H - 50
                 if i < n - 1:
                     top_y = cy_tray + (n - 1 - (i + 1)) * TRAY_STACK_OFFSET
-                    shadow_y = top_y + TRAY_H - 50
+                    shadow_y = top_y + TRAY_H - 25
                     final_parts.append(
                         f'  <rect'
                         f' x="{tray_x:.3f}"'
