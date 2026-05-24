@@ -52,7 +52,7 @@ TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)
                    for i in range(9)] + [TRAY_W + 5]
 
 # 판 겹치기 y오프셋 (두판 SVG 분석값)
-TRAY_STACK_OFFSET = 304.87   # 판 간 y 간격 (겹침 모드)
+TRAY_STACK_OFFSET = 1150     # 판 간 y 간격 (겹침 모드)
 TRAY_GAP          = 40       # 판 간 여백 (간격 모드)
 
 GROUP_GAP = 60   # 단위 그룹 간 가로 간격
@@ -293,7 +293,6 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
         raise ValueError("아이템이 없습니다.")
 
     body_parts = []
-    shadow_rects = []
 
     # ── 한판 배치 ──────────────────────────────────────────────────────────
     tray_items = groups['한판']
@@ -318,9 +317,15 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                     f'    {inner}\n'
                     f'  </g>'
                 )
-                # 그림자: y_offset만 저장, cy_tray_center 확정 후 생성
-                if i > 0:
-                    shadow_rects.append(y_offset)
+                # 그림자: 현재 판 바로 다음에 삽입 (맨 위 판 제외)
+                if i < n - 1:
+                    body_parts.append(
+                        f'  <g transform="translate(0,{y_offset:.3f})">\n'
+                        f'    <rect x="{TRAY_W*0.025:.3f}" y="{TRAY_H-40:.3f}" '
+                        f'width="{TRAY_W*0.95:.3f}" height="40" '
+                        f'fill="black" opacity="0.10" rx="20" ry="20"/>\n'
+                        f'  </g>'
+                    )
         else:
             # 간격 모드: 세로 나열
             cy = 0.0
@@ -440,17 +445,6 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                 )
             final_parts.append(part)
 
-    # 그림자: cy_tray_center 확정 후 final_parts 뒤에 추가할 rect 생성
-    cy_tray_center = (total_h - tray_block_h) / 2
-    final_shadows = []
-    for yo in shadow_rects:
-        shadow_y = cy_tray_center + yo + TRAY_H - 70
-        final_shadows.append(
-            f'  <rect x="0" y="{shadow_y:.3f}" '
-            f'width="{TRAY_W}" height="70" '
-            f'fill="black" opacity="{SHADOW_OPACITY}" rx="20" ry="20"/>'
-        )
-
     defs_str   = '\n    '.join(d for d in all_defs if d.strip())
     defs_block = f'  <defs>\n    {defs_str}\n  </defs>\n' if defs_str else ''
 
@@ -459,7 +453,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {total_w:.3f} {total_h:.3f}">\n'
         + defs_block
-        + '\n'.join(final_parts + final_shadows)
+        + '\n'.join(final_parts)
         + '\n</svg>\n'
     )
 
