@@ -322,10 +322,11 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                     f'  </g>'
                 )
 
-                # 그림자: 이 판 바닥 기준 -50px 위치에서 시작, height=200
-                # y = y_offset + TRAY_H - 50
+                # 그림자: 위판 바닥 기준 -50px, height=200
+                # y = 위판_y_offset + TRAY_H - 50
                 if i < n - 1:
-                    shadow_y = y_offset + TRAY_H - 50
+                    top_y = cy_tray + (n - 1 - (i + 1)) * TRAY_STACK_OFFSET
+                    shadow_y = top_y + TRAY_H - 50
                     final_parts.append(
                         f'  <rect'
                         f' x="{tray_x:.3f}"'
