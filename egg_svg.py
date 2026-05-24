@@ -4,7 +4,7 @@
 egg_svg.py v6
 - 그림자 구조: 두판 SVG 분석 기반
   레이어 순서: 아래판g → 그림자rect → 위판g
-  그림자: 위판 y기준 +246.2px, height=1000, opacity=0.10
+  그림자: 위판 y기준 +246.2px, height=1000, opacity=0.05
 """
 
 import sys, re, os
