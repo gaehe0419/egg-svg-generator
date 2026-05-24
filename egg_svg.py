@@ -52,7 +52,7 @@ TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)
                    for i in range(9)] + [TRAY_W + 5]
 
 # 판 겹치기 y오프셋 (두판 SVG 분석값)
-TRAY_STACK_OFFSET = 1150     # 판 간 y 간격 (겹침 모드)
+TRAY_STACK_OFFSET = 304.87   # 판 간 y 간격 (겹침 모드)
 TRAY_GAP          = 40       # 판 간 여백 (간격 모드)
 
 GROUP_GAP = 60   # 단위 그룹 간 가로 간격
@@ -317,14 +317,12 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                     f'    {inner}\n'
                     f'  </g>'
                 )
-                # 그림자: 현재 판 바로 다음에 삽입 (맨 위 판 제외)
+                # 그림자: 판 <g> 바깥 독립 rect, 절대좌표 (맨 위 판 제외)
                 if i < n - 1:
                     body_parts.append(
-                        f'  <g transform="translate(0,{y_offset:.3f})">\n'
-                        f'    <rect x="{TRAY_W*0.025:.3f}" y="{TRAY_H-40:.3f}" '
+                        f'  <rect x="{TRAY_W*0.025:.3f}" y="{y_offset+TRAY_H-40:.3f}" '
                         f'width="{TRAY_W*0.95:.3f}" height="40" '
-                        f'fill="black" opacity="0.10" rx="20" ry="20"/>\n'
-                        f'  </g>'
+                        f'fill="black" opacity="0.10" rx="20" ry="20"/>'
                     )
         else:
             # 간격 모드: 세로 나열

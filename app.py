@@ -194,37 +194,29 @@ with right:
                 type="primary",
             )
 
-            png_data = None
-            try:
-                import cairosvg
-                png_data = cairosvg.svg2png(bytestring=svg_out.encode(), scale=2)
-            except (ImportError, OSError):
-                try:
-                    import subprocess, tempfile, os as _os
-                    with tempfile.NamedTemporaryFile(
-                            suffix='.svg', delete=False, mode='w') as _f:
-                        _f.write(svg_out)
-                        _tmp = _f.name
-                    subprocess.run(
-                        ['qlmanage', '-t', '-s', '4000', '-o',
-                         _os.path.dirname(_tmp), _tmp],
-                        capture_output=True, check=True)
-                    _png = _tmp + '.png'
-                    with open(_png, 'rb') as _f:
-                        png_data = _f.read()
-                    _os.unlink(_png)
-                    _os.unlink(_tmp)
-                except Exception:
-                    pass
-
-            if png_data:
-                st.download_button(
-                    label="⬇ PNG 저장 (2배 고해상도)",
-                    data=png_data,
-                    file_name=fname.replace(".svg", ".png"),
-                    mime="image/png",
-                    use_container_width=True,
-                )
+            import base64
+            svg_b64 = base64.b64encode(svg_out.encode('utf-8')).decode('ascii')
+            png_fname = fname.replace(".svg", ".png")
+            st.components.v1.html(f"""<!DOCTYPE html><html><body style="margin:0;padding:0">
+<button onclick="dlPNG()" style="width:100%;height:38px;border-radius:6px;
+border:1px solid rgba(49,51,63,0.2);background:white;cursor:pointer;
+font-size:14px;color:rgb(49,51,63);">⬇ PNG 저장 (2배 고해상도)</button>
+<script>
+function dlPNG(){{
+  var img=new Image();
+  img.onload=function(){{
+    var c=document.createElement('canvas');
+    c.width=img.naturalWidth*2; c.height=img.naturalHeight*2;
+    var ctx=c.getContext('2d'); ctx.scale(2,2); ctx.drawImage(img,0,0);
+    c.toBlob(function(b){{
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(b); a.download='{png_fname}';
+      document.body.appendChild(a); a.click(); a.remove();
+    }},'image/png');
+  }};
+  img.src='data:image/svg+xml;base64,{svg_b64}';
+}}
+</script></body></html>""", height=46)
 
         except Exception as e:
             import traceback
