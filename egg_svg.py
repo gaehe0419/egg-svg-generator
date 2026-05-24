@@ -318,8 +318,8 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                     f'    {inner}\n'
                     f'  </g>'
                 )
-                # 그림자: 위판 기준 아래쪽에 검정 20% rect
-                if i < n - 1:
+                # 그림자: 두번째 판부터 하단에 검정 20% rect (첫번째 판 제외)
+                if i > 0:
                     shadow_y = y_offset + TRAY_H - TRAY_STACK_OFFSET * 0.3
                     shadow_h = TRAY_STACK_OFFSET * 1.3
                     shadow_rects.append(
