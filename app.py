@@ -194,6 +194,38 @@ with right:
                 type="primary",
             )
 
+            png_data = None
+            try:
+                import cairosvg
+                png_data = cairosvg.svg2png(bytestring=svg_out.encode(), scale=2)
+            except (ImportError, OSError):
+                try:
+                    import subprocess, tempfile, os as _os
+                    with tempfile.NamedTemporaryFile(
+                            suffix='.svg', delete=False, mode='w') as _f:
+                        _f.write(svg_out)
+                        _tmp = _f.name
+                    subprocess.run(
+                        ['qlmanage', '-t', '-s', '4000', '-o',
+                         _os.path.dirname(_tmp), _tmp],
+                        capture_output=True, check=True)
+                    _png = _tmp + '.png'
+                    with open(_png, 'rb') as _f:
+                        png_data = _f.read()
+                    _os.unlink(_png)
+                    _os.unlink(_tmp)
+                except Exception:
+                    pass
+
+            if png_data:
+                st.download_button(
+                    label="⬇ PNG 저장 (2배 고해상도)",
+                    data=png_data,
+                    file_name=fname.replace(".svg", ".png"),
+                    mime="image/png",
+                    use_container_width=True,
+                )
+
         except Exception as e:
             import traceback
             st.error(f"생성 오류: {e}")
