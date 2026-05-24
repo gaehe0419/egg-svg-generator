@@ -4,7 +4,7 @@
 egg_svg.py v6
 - 그림자 구조: 두판 SVG 분석 기반
   레이어 순서: 아래판g → 그림자rect → 위판g
-  그림자: 위판 y기준 +246.2px, height=1000, opacity=0.05
+  그림자: 위판 y기준 +246.2px, height=1000, opacity=0.1
 """
 
 import sys, re, os
@@ -42,7 +42,7 @@ TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)
 TRAY_STACK_OFFSET = 304.87   # 아래판y - 위판y
 TRAY_SHADOW_Y_OFFSET = 246.2 # 위판 기준 그림자 시작 y
 TRAY_SHADOW_H = 1000         # 그림자 높이 (아래판 전체 커버)
-TRAY_SHADOW_OPACITY = 0.2    # st4 클래스 opacity
+TRAY_SHADOW_OPACITY = 0.1    # st4 클래스 opacity
 
 TRAY_GAP  = 40
 GROUP_GAP = 60
