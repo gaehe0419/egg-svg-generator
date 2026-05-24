@@ -318,15 +318,9 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                     f'    {inner}\n'
                     f'  </g>'
                 )
-                # 그림자: 두번째 판부터 하단에 검정 20% rect (첫번째 판 제외)
+                # 그림자: y_offset만 저장, cy_tray_center 확정 후 생성
                 if i > 0:
-                    shadow_y = y_offset + TRAY_H - TRAY_STACK_OFFSET * 0.3
-                    shadow_h = TRAY_STACK_OFFSET * 1.3
-                    shadow_rects.append(
-                        f'  <rect x="0" y="{shadow_y:.3f}" '
-                        f'width="{TRAY_W}" height="{shadow_h:.3f}" '
-                        f'fill="black" opacity="{SHADOW_OPACITY}"/>'
-                    )
+                    shadow_rects.append(y_offset)
         else:
             # 간격 모드: 세로 나열
             cy = 0.0
@@ -446,17 +440,16 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
                 )
             final_parts.append(part)
 
-    # 그림자도 수직 중앙 이동
+    # 그림자: cy_tray_center 확정 후 final_parts 뒤에 추가할 rect 생성
     cy_tray_center = (total_h - tray_block_h) / 2
-    adjusted_shadows = []
-    for sr in shadow_rects:
-        if cy_tray_center != 0:
-            sr = re.sub(
-                r'y="([\d.]+)"',
-                lambda m: f'y="{float(m.group(1))+cy_tray_center:.3f}"',
-                sr, count=1
-            )
-        adjusted_shadows.append(sr)
+    final_shadows = []
+    for yo in shadow_rects:
+        shadow_y = cy_tray_center + yo + TRAY_H - 70
+        final_shadows.append(
+            f'  <rect x="0" y="{shadow_y:.3f}" '
+            f'width="{TRAY_W}" height="70" '
+            f'fill="black" opacity="{SHADOW_OPACITY}" rx="20" ry="20"/>'
+        )
 
     defs_str   = '\n    '.join(d for d in all_defs if d.strip())
     defs_block = f'  <defs>\n    {defs_str}\n  </defs>\n' if defs_str else ''
@@ -466,7 +459,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {total_w:.3f} {total_h:.3f}">\n'
         + defs_block
-        + '\n'.join(final_parts + adjusted_shadows)
+        + '\n'.join(final_parts + final_shadows)
         + '\n</svg>\n'
     )
 
