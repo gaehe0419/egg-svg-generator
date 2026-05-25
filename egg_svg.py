@@ -33,11 +33,6 @@ TRAY_ROW_Y = [102.52, 216.02, 329.52, 443.01, 556.51,
               670.01, 783.51, 897.00, 1010.50, 1124.00]
 TRAY_ROW_H = 113.5
 
-ROW_CLIP_X = [(ROW_EGG_RIGHT[i] + (ROW_EGG_RIGHT[i+1] - EGG_WIDTH)) / 2
-              for i in range(9)] + [ROW_W + 5]
-
-TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)) / 2
-                   for i in range(9)] + [TRAY_W + 5]
 
 TRAY_STACK_OFFSET    = 304.87
 TRAY_SHADOW_Y_OFFSET = 246.2
@@ -142,62 +137,72 @@ def make_row_item(n_dotted):
         empty_group = f'<g transform="translate({dx:.3f},0)">{body_e}</g>'
         modified = modified[:pos] + empty_group + modified[end_pos:]
     return all_defs, [modified], ROW_W, ROW_H
-def make_tray_clips(n_solid):
-    n_full = n_solid // 10
-    n_part = n_solid % 10
-    sid = f'tcs{new_id()}'
-    eid = f'tce{new_id()}'
 
-    if n_part == 0:
-        yb = TRAY_ROW_Y[n_full] if n_full < 10 else TRAY_H + 5
-        solid_def = (f'<clipPath id="{sid}">'
-                     f'<rect x="-5" y="-5" width="{TRAY_W+10}" height="{yb+5:.3f}"/>'
-                     f'</clipPath>')
-        empty_def = (f'<clipPath id="{eid}">'
-                     f'<rect x="-5" y="{yb:.3f}" width="{TRAY_W+10}" '
-                     f'height="{TRAY_H+10:.3f}"/>'
-                     f'</clipPath>')
-    else:
-        yt = TRAY_ROW_Y[n_full]
-        yb = yt + TRAY_ROW_H
-        xr = TRAY_COL_CLIP_X[n_part - 1]
-        pts_s = (f"-5,-5 {TRAY_W+5},-5 {TRAY_W+5},{yt:.3f} "
-                 f"{xr:.3f},{yt:.3f} {xr:.3f},{yb:.3f} -5,{yb:.3f}")
-        solid_def = (f'<clipPath id="{sid}">'
-                     f'<polygon points="{pts_s}"/>'
-                     f'</clipPath>')
-        empty_def = (f'<clipPath id="{eid}">'
-                     f'<rect x="{xr:.3f}" y="{yt:.3f}" '
-                     f'width="{TRAY_W+10:.3f}" height="{TRAY_ROW_H+3:.3f}"/>'
-                     f'<rect x="-5" y="{yb:.3f}" width="{TRAY_W+10}" '
-                     f'height="{TRAY_H+10:.3f}"/>'
-                     f'</clipPath>')
-
-    return sid, solid_def, eid, empty_def
+EMPTY_EGG_CSS = (
+    '\n      .empty-body {'
+    ' fill: #fff; stroke: #9e9f9f;'
+    ' stroke-dasharray: 8 8 0 0 0 0; stroke-width: 4; }\n'
+    '      .empty-hl { opacity: 0; }'
+)
 
 def make_tray_item(n_dotted):
     n_solid = 100 - n_dotted
-    all_defs = []
 
     if n_dotted == 0:
         d, body = prepare_component('한판')
-        if d: all_defs.append(d)
-        return all_defs, [body], TRAY_W, TRAY_H
+        return ([d] if d else []), [body], TRAY_W, TRAY_H
 
-    if n_solid == 0:
-        d, body = prepare_component('한판')
-        if d: all_defs.append(d)
-        return all_defs, [body], TRAY_W, TRAY_H
+    path_file = os.path.join(COMP_DIR, FILES['한판'])
+    tree = ET.parse(path_file)
+    root = tree.getroot()
 
-    sid, sdef, eid, edef = make_tray_clips(n_solid)
-    all_defs += [sdef, edef]
+    for elem in root.iter():
+        elem.tag = elem.tag.split('}', 1)[1] if '}' in elem.tag else elem.tag
+        elem.attrib = {(k.split('}', 1)[1] if '}' in k else k): v
+                       for k, v in elem.attrib.items()}
 
-    ds, solid_body = prepare_component('한판', clip_id=sid)
-    de, empty_body = prepare_component('한판', clip_id=eid)
-    if ds: all_defs.append(ds)
-    if de: all_defs.append(de)
+    defs_elem = root.find('defs')
+    if defs_elem is not None:
+        style_elem = defs_elem.find('style')
+        if style_elem is not None and style_elem.text:
+            style_elem.text += EMPTY_EGG_CSS
 
-    return all_defs, [solid_body, empty_body], TRAY_W, TRAY_H
+    for egg_idx in range(n_solid, 100):
+        row = egg_idx // 10
+        col = egg_idx % 10
+        row_g  = root[3 + row]
+        eggs_g = row_g[1]
+        if row % 2 == 0:       # flat structure: path, ellipse, path, ellipse, ...
+            body_elem = eggs_g[col * 2]
+            hl_elem   = eggs_g[col * 2 + 1]
+        else:                   # grouped structure: <g><path/><ellipse/></g>
+            egg_g     = eggs_g[col]
+            body_elem = egg_g[0]
+            hl_elem   = egg_g[1]
+        body_elem.set('class', 'empty-body')
+        hl_elem.set('class', 'empty-hl')
+
+    raw = ET.tostring(root, encoding='unicode')
+
+    iid    = new_id()
+    prefix = f'c{iid}'
+
+    raw = re.sub(r'<\?xml[^>]+\?>\s*', '', raw)
+    raw = re.sub(r'\s*data-name="[^"]*"', '', raw)
+    raw = re.sub(r'\.(st\d+)', lambda m: f'.{prefix}_{m.group(1)}', raw)
+    raw = re.sub(r'class="(st\d+)"',
+                 lambda m: f'class="{prefix}_{m.group(1)}"', raw)
+    raw = re.sub(r'id="([^"]+)"',
+                 lambda m: f'id="{prefix}_{m.group(1)}"', raw)
+
+    defs_match = re.search(r'<defs>(.*?)</defs>', raw, re.DOTALL)
+    defs_str   = defs_match.group(1).strip() if defs_match else ''
+    raw        = re.sub(r'\s*<defs>.*?</defs>\s*', '\n', raw, flags=re.DOTALL)
+
+    raw = re.sub(r'<svg[^>]+>', '<g>', raw)
+    raw = raw.replace('</svg>', '</g>')
+
+    return ([defs_str] if defs_str else []), [raw.strip()], TRAY_W, TRAY_H
 
 def make_solo_item():
     d, body = prepare_component('낱개')
