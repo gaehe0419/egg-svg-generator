@@ -120,14 +120,13 @@ def serialize_elem(elem, prefix):
     return raw
 
 def make_row_item(n_dotted):
+    """
+    한줄 혼합: 한줄 SVG 전체를 그대로 사용하되
+    빈 자리 달걀의 st0/st1 스타일을 body 내부에서 직접 교체.
+    트레이 레이어 순서 유지.
+    """
     n_solid = 10 - n_dotted
     all_defs = []
-    style_text, egg_gs = get_solid_row_eggs()
-
-    iid = new_id()
-    prefix = f'sr{iid}'
-    styled = re.sub(r'\.(st\d+)', f'.{prefix}_\\1', style_text)
-    all_defs.append(f'<style>{styled}</style>')
 
     d_base, body_base = prepare_component('한줄')
     if d_base:
@@ -136,23 +135,36 @@ def make_row_item(n_dotted):
     if n_dotted == 0:
         return all_defs, [body_base], ROW_W, ROW_H
 
-    egg_parts = []
-    for i, eg in enumerate(egg_gs):
-        raw = serialize_elem(eg, prefix)
-        if i >= n_solid:
-            raw = raw.replace(
-                f'class="{prefix}_st0"',
-                f'style="fill:#fff;stroke:#ccc;stroke-width:6;stroke-dasharray:12,8;" class="{prefix}_st0"'
-            )
-            raw = raw.replace(
-                f'class="{prefix}_st1"',
-                f'style="display:none;"'
-            )
-        egg_parts.append(raw)
+    # prepare_component가 부여한 prefix 추출
+    prefix_match = re.search(r'class="(c\d+)_st', body_base)
+    if not prefix_match:
+        return all_defs, [body_base], ROW_W, ROW_H
+    prefix = prefix_match.group(1)
 
-    combined = body_base + '\n' + '\n'.join(egg_parts)
-    return all_defs, [combined], ROW_W, ROW_H
+    # body_base에서 <g> 위치를 순서대로 찾아 n_solid번째 이후 달걀 스타일 교체
+    modified = body_base
+    for idx in range(n_solid, 10):
+        g_positions = [m.start() for m in re.finditer(r'<g>', modified)]
+        # g[0]은 SVG 래퍼 g이므로 달걀은 g[1]부터 시작 → idx+1
+        actual_idx = idx + 1
+        if actual_idx >= len(g_positions):
+            break
+        pos = g_positions[actual_idx]
+        end_pos = modified.find('</g>', pos) + 4
+        g_block = modified[pos:end_pos]
+        g_block = g_block.replace(
+            f'class="{prefix}_st0"',
+            f'class="{prefix}_st0" style="fill:#9e9f9f;"',
+            1
+        )
+        g_block = g_block.replace(
+            f'class="{prefix}_st1"',
+            f'class="{prefix}_st1" style="fill:#fff;"',
+            1
+        )
+        modified = modified[:pos] + g_block + modified[end_pos:]
 
+    return all_defs, [modified], ROW_W, ROW_H
 def make_tray_clips(n_solid):
     n_full = n_solid // 10
     n_part = n_solid % 10
