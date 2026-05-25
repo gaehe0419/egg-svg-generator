@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 COMP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'components')
 FILES = {
     '낱개': 'egg-solo.svg',
+    '낱개빈칸': 'egg-solo-empty.svg',
     '한줄': 'egg-row.svg',
     '한판': 'egg-tray.svg',
 }
@@ -38,15 +39,13 @@ ROW_CLIP_X = [(ROW_EGG_RIGHT[i] + (ROW_EGG_RIGHT[i+1] - EGG_WIDTH)) / 2
 TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)) / 2
                    for i in range(9)] + [TRAY_W + 5]
 
-# 두판 SVG 분석값
-TRAY_STACK_OFFSET = 304.87   # 아래판y - 위판y
-TRAY_SHADOW_Y_OFFSET = 246.2 # 위판 기준 그림자 시작 y
-TRAY_SHADOW_H = 1000         # 그림자 높이 (아래판 전체 커버)
-TRAY_SHADOW_OPACITY = 0.2    # st4 클래스 opacity
-
-TRAY_GAP  = 40
-GROUP_GAP = 60
-ITEM_GAP  = 20
+TRAY_STACK_OFFSET    = 304.87
+TRAY_SHADOW_Y_OFFSET = 246.2
+TRAY_SHADOW_H        = 1000
+TRAY_SHADOW_OPACITY  = 0.2
+TRAY_GAP             = 40
+GROUP_GAP            = 60
+ITEM_GAP             = 20
 
 _file_cache = {}
 _counter    = [0]
@@ -120,50 +119,27 @@ def serialize_elem(elem, prefix):
     return raw
 
 def make_row_item(n_dotted):
-    """
-    한줄 혼합: 한줄 SVG 전체를 그대로 사용하되
-    빈 자리 달걀의 st0/st1 스타일을 body 내부에서 직접 교체.
-    트레이 레이어 순서 유지.
-    """
     n_solid = 10 - n_dotted
     all_defs = []
-
     d_base, body_base = prepare_component('한줄')
     if d_base:
         all_defs.append(d_base)
-
     if n_dotted == 0:
         return all_defs, [body_base], ROW_W, ROW_H
-
-    # prepare_component가 부여한 prefix 추출
-    prefix_match = re.search(r'class="(c\d+)_st', body_base)
-    if not prefix_match:
-        return all_defs, [body_base], ROW_W, ROW_H
-    prefix = prefix_match.group(1)
-
-    # body_base에서 <g> 위치를 순서대로 찾아 n_solid번째 이후 달걀 스타일 교체
     modified = body_base
-    for idx in range(n_solid, 10):
+    for idx in range(9, n_solid - 1, -1):
         g_positions = [m.start() for m in re.finditer(r'<g>', modified)]
-        # g[0]은 SVG 래퍼 g이므로 달걀은 g[1]부터 시작 → idx+1
         actual_idx = idx + 1
         if actual_idx >= len(g_positions):
-            break
+            continue
         pos = g_positions[actual_idx]
         end_pos = modified.find('</g>', pos) + 4
-        g_block = modified[pos:end_pos]
-        g_block = g_block.replace(
-            f'class="{prefix}_st0"',
-            f'class="{prefix}_st0" style="fill:#9e9f9f;"',
-            1
-        )
-        g_block = g_block.replace(
-            f'class="{prefix}_st1"',
-            f'class="{prefix}_st1" style="fill:#fff;"',
-            1
-        )
-        modified = modified[:pos] + g_block + modified[end_pos:]
-
+        dx = ROW_EGG_RIGHT[idx] - 91.86 - SOLO_W / 2
+        d_e, body_e = prepare_component('낱개빈칸')
+        if d_e:
+            all_defs.append(d_e)
+        empty_group = f'<g transform="translate({dx:.3f},0)">{body_e}</g>'
+        modified = modified[:pos] + empty_group + modified[end_pos:]
     return all_defs, [modified], ROW_W, ROW_H
 def make_tray_clips(n_solid):
     n_full = n_solid // 10
