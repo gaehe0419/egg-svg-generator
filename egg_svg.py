@@ -42,7 +42,7 @@ TRAY_COL_CLIP_X = [(TRAY_COL_RIGHT[i] + (TRAY_COL_RIGHT[i+1] - EGG_WIDTH * 2.01)
 TRAY_STACK_OFFSET    = 304.87
 TRAY_SHADOW_Y_OFFSET = 246.2
 TRAY_SHADOW_H        = 1000
-TRAY_SHADOW_OPACITY  = 0.2
+TRAY_SHADOW_OPACITY  = 0.1
 TRAY_GAP             = 40
 GROUP_GAP            = 60
 ITEM_GAP             = 20
@@ -316,7 +316,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None, row_empty_last_only=False
                 # y = 위판_y_offset + TRAY_H - 50
                 if i < n - 1:
                     top_y = cy_tray + (n - 1 - (i + 1)) * TRAY_STACK_OFFSET
-                    shadow_y = top_y + TRAY_H - 50
+                    shadow_y = top_y + TRAY_H - 200
                     final_parts.append(
                         f'  <rect'
                         f' x="{tray_x:.3f}"'
