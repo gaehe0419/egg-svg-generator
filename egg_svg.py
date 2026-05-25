@@ -220,7 +220,7 @@ def parse_cmd(s):
     return results
 
 def build_svg(parsed, tray_stack=True, solo_cols=None,
-              row_empty_last_only=False, tray_empty_last_only=False):
+              row_empty_mode='모든 줄 동일', tray_empty_last_only=False):
     _counter[0] = 0
 
     ORDER  = ['한판', '한줄', '낱개']
@@ -233,7 +233,13 @@ def build_svg(parsed, tray_stack=True, solo_cols=None,
                 effective_empty = empty if (not tray_empty_last_only or i == count - 1) else 0
                 d, e, w, h = make_tray_item(effective_empty)
             elif unit == '한줄':
-                effective_empty = empty if (not row_empty_last_only or i == count - 1) else 0
+                if row_empty_mode == '마지막 줄만':
+                    effective_empty = empty if i == count - 1 else 0
+                elif row_empty_mode == '뒤에서부터':
+                    rows_from_end   = count - 1 - i
+                    effective_empty = min(max(empty - rows_from_end * 10, 0), 10)
+                else:  # 모든 줄 동일
+                    effective_empty = empty
                 d, e, w, h = make_row_item(effective_empty)
             else:
                 d, e, w, h = make_solo_item()
