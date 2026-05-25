@@ -90,6 +90,17 @@ with left:
         )
         tray_stack = (tray_mode == "겹침 (기본)")
 
+    # 한줄 빈 자리 적용 범위
+    row_empty_last_only = False
+    if hanjul_count > 1 and hanjul_empty > 0:
+        empty_apply = st.radio(
+            "빈 자리 적용",
+            ["마지막 줄만", "모든 줄"],
+            horizontal=True,
+            key="row_empty_apply"
+        )
+        row_empty_last_only = (empty_apply == "마지막 줄만")
+
     # 낱개 열 수
     solo_cols = None
     if naalgae_count > 1:
@@ -142,6 +153,7 @@ with right:
                 parsed,
                 tray_stack=tray_stack,
                 solo_cols=solo_cols,
+                row_empty_last_only=row_empty_last_only,
             )
 
             svg_inline = svg_out.replace(

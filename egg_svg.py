@@ -137,6 +137,7 @@ def make_row_item(n_dotted):
         dx = ROW_EGG_RIGHT[idx] - 91.86 - SOLO_W / 2
         d_e, body_e = prepare_component('낱개빈칸')
         if d_e:
+            d_e = d_e.replace('fill: #9e9f9f;', 'fill: #9e9f9f; stroke: #9e9f9f; stroke-width: 1;')
             all_defs.append(d_e)
         empty_group = f'<g transform="translate({dx:.3f},0)">{body_e}</g>'
         modified = modified[:pos] + empty_group + modified[end_pos:]
@@ -213,7 +214,7 @@ def parse_cmd(s):
             results.append((unit, count, empty))
     return results
 
-def build_svg(parsed, tray_stack=True, solo_cols=None):
+def build_svg(parsed, tray_stack=True, solo_cols=None, row_empty_last_only=False):
     _counter[0] = 0
 
     ORDER  = ['한판', '한줄', '낱개']
@@ -221,11 +222,12 @@ def build_svg(parsed, tray_stack=True, solo_cols=None):
     all_defs = []
 
     for unit, count, empty in parsed:
-        for _ in range(count):
+        for i in range(count):
             if unit == '한판':
                 d, e, w, h = make_tray_item(empty)
             elif unit == '한줄':
-                d, e, w, h = make_row_item(empty)
+                effective_empty = empty if (not row_empty_last_only or i == count - 1) else 0
+                d, e, w, h = make_row_item(effective_empty)
             else:
                 d, e, w, h = make_solo_item()
             all_defs.extend(d)
