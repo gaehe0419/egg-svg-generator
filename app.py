@@ -90,6 +90,17 @@ with left:
         )
         tray_stack = (tray_mode == "겹침 (기본)")
 
+    # 한판 빈 자리 적용 범위
+    tray_empty_last_only = False
+    if hanpan_count > 1 and hanpan_empty > 0:
+        tray_empty_apply = st.radio(
+            "한판 빈 자리 적용",
+            ["마지막 판만", "모든 판"],
+            horizontal=True,
+            key="tray_empty_apply"
+        )
+        tray_empty_last_only = (tray_empty_apply == "마지막 판만")
+
     # 한줄 빈 자리 적용 범위
     row_empty_last_only = False
     if hanjul_count > 1 and hanjul_empty > 0:
@@ -154,6 +165,7 @@ with right:
                 tray_stack=tray_stack,
                 solo_cols=solo_cols,
                 row_empty_last_only=row_empty_last_only,
+                tray_empty_last_only=tray_empty_last_only,
             )
 
             svg_inline = svg_out.replace(

@@ -219,7 +219,8 @@ def parse_cmd(s):
             results.append((unit, count, empty))
     return results
 
-def build_svg(parsed, tray_stack=True, solo_cols=None, row_empty_last_only=False):
+def build_svg(parsed, tray_stack=True, solo_cols=None,
+              row_empty_last_only=False, tray_empty_last_only=False):
     _counter[0] = 0
 
     ORDER  = ['한판', '한줄', '낱개']
@@ -229,7 +230,8 @@ def build_svg(parsed, tray_stack=True, solo_cols=None, row_empty_last_only=False
     for unit, count, empty in parsed:
         for i in range(count):
             if unit == '한판':
-                d, e, w, h = make_tray_item(empty)
+                effective_empty = empty if (not tray_empty_last_only or i == count - 1) else 0
+                d, e, w, h = make_tray_item(effective_empty)
             elif unit == '한줄':
                 effective_empty = empty if (not row_empty_last_only or i == count - 1) else 0
                 d, e, w, h = make_row_item(effective_empty)
