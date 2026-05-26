@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import streamlit as st
-import sys, os, re, datetime
+import sys, os, re, datetime, base64
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
@@ -235,11 +235,17 @@ with right:
                 type="primary",
             )
 
-            import base64
+            png_export_w = int(st.number_input(
+                "PNG 너비 (px)", min_value=100, max_value=10000,
+                value=2000, step=100, key="png_w",
+            ))
+            png_export_h = max(1, round(png_export_w * svg_h / svg_w))
+            st.caption(f"↔ {png_export_w} × {png_export_h} px")
+
             svg_png = svg_out.replace(
                 '<svg xmlns="http://www.w3.org/2000/svg"',
-                '<svg xmlns="http://www.w3.org/2000/svg"'
-                f' width="{svg_w:.3f}" height="{svg_h:.3f}"',
+                f'<svg xmlns="http://www.w3.org/2000/svg"'
+                f' width="{png_export_w}" height="{png_export_h}"',
                 1,
             )
             svg_b64 = base64.b64encode(svg_png.encode('utf-8')).decode('ascii')
@@ -247,19 +253,16 @@ with right:
             st.components.v1.html(f"""<!DOCTYPE html><html><body style="margin:0;padding:0">
 <button onclick="dlPNG()" style="width:100%;height:38px;border-radius:6px;
 border:1px solid rgba(49,51,63,0.2);background:white;cursor:pointer;
-font-size:14px;color:rgb(49,51,63);">⬇ PNG 저장 (2배 고해상도)</button>
+font-size:14px;color:rgb(49,51,63);">⬇ PNG 저장</button>
 <script>
-const svgWidth = {svg_w:.3f};
-const svgHeight = {svg_h:.3f};
-const exportScale = 2;
 function dlPNG(){{
   var img=new Image();
   img.onload=function(){{
     var c=document.createElement('canvas');
-    c.width=Math.ceil(svgWidth*exportScale);
-    c.height=Math.ceil(svgHeight*exportScale);
+    c.width={png_export_w};
+    c.height={png_export_h};
     var ctx=c.getContext('2d');
-    ctx.drawImage(img,0,0,c.width,c.height);
+    ctx.drawImage(img,0,0,{png_export_w},{png_export_h});
     c.toBlob(function(b){{
       var a=document.createElement('a');
       a.href=URL.createObjectURL(b); a.download='{png_fname}';
