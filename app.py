@@ -235,12 +235,10 @@ with right:
                 type="primary",
             )
 
-            png_export_w = int(st.number_input(
-                "PNG 너비 (px)", min_value=100, max_value=10000,
-                value=2000, step=100, key="png_w",
-            ))
+            if 'png_w' not in st.session_state:
+                st.session_state['png_w'] = 2000
+            png_export_w = int(st.session_state['png_w'])
             png_export_h = max(1, round(png_export_w * svg_h / svg_w))
-            st.caption(f"↔ {png_export_w} × {png_export_h} px")
 
             svg_png = svg_out.replace(
                 '<svg xmlns="http://www.w3.org/2000/svg"',
@@ -272,6 +270,12 @@ function dlPNG(){{
   img.src='data:image/svg+xml;base64,{svg_b64}';
 }}
 </script></body></html>""", height=46)
+
+            st.number_input(
+                "PNG 너비 (px)", min_value=100, max_value=10000,
+                value=2000, step=100, key="png_w",
+            )
+            st.caption(f"↔ {png_export_w} × {png_export_h} px")
 
         except Exception as e:
             import traceback
