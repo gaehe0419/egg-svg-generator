@@ -194,6 +194,7 @@ with right:
                 display_w = 640
                 display_h = max(60, int(display_w * svg_h / svg_w))
             else:
+                svg_w, svg_h = 640.0, 200.0
                 display_w, display_h = 640, 200
 
             svg_inline = svg_inline.replace(
@@ -235,19 +236,30 @@ with right:
             )
 
             import base64
-            svg_b64 = base64.b64encode(svg_out.encode('utf-8')).decode('ascii')
+            svg_png = svg_out.replace(
+                '<svg xmlns="http://www.w3.org/2000/svg"',
+                '<svg xmlns="http://www.w3.org/2000/svg"'
+                f' width="{svg_w:.3f}" height="{svg_h:.3f}"',
+                1,
+            )
+            svg_b64 = base64.b64encode(svg_png.encode('utf-8')).decode('ascii')
             png_fname = fname.replace(".svg", ".png")
             st.components.v1.html(f"""<!DOCTYPE html><html><body style="margin:0;padding:0">
 <button onclick="dlPNG()" style="width:100%;height:38px;border-radius:6px;
 border:1px solid rgba(49,51,63,0.2);background:white;cursor:pointer;
 font-size:14px;color:rgb(49,51,63);">⬇ PNG 저장 (2배 고해상도)</button>
 <script>
+const svgWidth = {svg_w:.3f};
+const svgHeight = {svg_h:.3f};
+const exportScale = 2;
 function dlPNG(){{
   var img=new Image();
   img.onload=function(){{
     var c=document.createElement('canvas');
-    c.width=img.naturalWidth*2; c.height=img.naturalHeight*2;
-    var ctx=c.getContext('2d'); ctx.scale(2,2); ctx.drawImage(img,0,0);
+    c.width=Math.ceil(svgWidth*exportScale);
+    c.height=Math.ceil(svgHeight*exportScale);
+    var ctx=c.getContext('2d');
+    ctx.drawImage(img,0,0,c.width,c.height);
     c.toBlob(function(b){{
       var a=document.createElement('a');
       a.href=URL.createObjectURL(b); a.download='{png_fname}';
