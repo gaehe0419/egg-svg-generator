@@ -53,9 +53,18 @@ with left:
         hanpan_empty = 0
         hanjul_empty = 0
         row_empty_mode = "모든 줄 동일"
+        tray_empty_last_only = False
 
         if hanpan_count > 0:
             hanpan_empty = st.slider("한판 빈 자리 (0–100)", 0, 100, 0, key="hp_e")
+            if hanpan_count > 1 and hanpan_empty > 0:
+                tray_empty_apply = st.radio(
+                    "한판 빈 자리 적용",
+                    ["마지막 판만", "모든 판"],
+                    horizontal=True,
+                    key="tray_empty_apply"
+                )
+                tray_empty_last_only = (tray_empty_apply == "마지막 판만")
         if hanjul_count > 0:
             if hanjul_count > 1:
                 row_empty_mode = st.radio(
@@ -71,11 +80,20 @@ with left:
 
     else:
         row_empty_mode = "모든 줄 동일"
+        tray_empty_last_only = False
         st.markdown("##### 🟫 한판 (×100)")
         c1, c2 = st.columns(2)
         hanpan_count = c1.number_input("개수", 0, 9, 0, key="hp_c")
         hanpan_empty = c2.number_input("빈 자리", 0, 100, 0, key="hp_e2",
                                        disabled=(hanpan_count == 0))
+        if hanpan_count > 1 and hanpan_empty > 0:
+            tray_empty_apply = st.radio(
+                "한판 빈 자리 적용",
+                ["마지막 판만", "모든 판"],
+                horizontal=True,
+                key="tray_empty_apply"
+            )
+            tray_empty_last_only = (tray_empty_apply == "마지막 판만")
 
         st.markdown("##### 🟡 한줄 (×10)")
         hanjul_count = st.number_input("개수", 0, 9, 0, key="hj_c")
@@ -109,17 +127,6 @@ with left:
             key="tray_mode"
         )
         tray_stack = (tray_mode == "겹침 (기본)")
-
-    # 한판 빈 자리 적용 범위
-    tray_empty_last_only = False
-    if hanpan_count > 1 and hanpan_empty > 0:
-        tray_empty_apply = st.radio(
-            "한판 빈 자리 적용",
-            ["마지막 판만", "모든 판"],
-            horizontal=True,
-            key="tray_empty_apply"
-        )
-        tray_empty_last_only = (tray_empty_apply == "마지막 판만")
 
     # 낱개 열 수
     solo_cols = None
