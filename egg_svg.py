@@ -141,7 +141,7 @@ def make_row_item(n_dotted):
 EMPTY_EGG_CSS = (
     '\n      .empty-body {'
     ' fill: #fff; stroke: #9e9f9f;'
-' stroke-dasharray: 8 8 0 0 0 0; stroke-width: 4; }\n'
+' stroke-dasharray: 12 8; stroke-width: 4; }\n'
     '      .empty-hl { opacity: 0; }'
 )
 
