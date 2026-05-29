@@ -221,7 +221,7 @@ def parse_cmd(s):
 
 def build_svg(parsed, tray_stack=True, solo_cols=None,
               row_empty_mode='모든 줄 동일', tray_empty_last_only=False,
-              item_gap=ITEM_GAP, tray_gap=TRAY_GAP):
+              item_gap=ITEM_GAP, tray_gap=TRAY_GAP, solo_gap=10):
     _counter[0] = 0
 
     ORDER  = ['한판', '한줄', '낱개']
@@ -275,8 +275,8 @@ def build_svg(parsed, tray_stack=True, solo_cols=None,
     if solo_items:
         cols = solo_cols if solo_cols and solo_cols > 0 else n_solo
         rows = (n_solo + cols - 1) // cols
-        solo_block_w = cols * SOLO_W + (cols - 1) * (item_gap * 0.5)
-        solo_block_h = rows * SOLO_H + (rows - 1) * (item_gap * 0.5)
+        solo_block_w = cols * SOLO_W + (cols - 1) * solo_gap
+        solo_block_h = rows * SOLO_H + (rows - 1) * solo_gap
 
     section_widths, section_heights = [], []
     if tray_items:
@@ -372,8 +372,8 @@ def build_svg(parsed, tray_stack=True, solo_cols=None,
         for idx, (elems, w, h) in enumerate(solo_items):
             col_i = idx % cols
             row_i = idx // cols
-            sx = col_i * (SOLO_W + item_gap * 0.5)
-            sy = row_i * (SOLO_H + item_gap * 0.5)
+            sx = col_i * (SOLO_W + solo_gap)
+            sy = row_i * (SOLO_H + solo_gap)
             inner = '\n      '.join(elems)
             solo_inner.append(
                 f'    <g transform="translate({sx:.3f},{sy:.3f})">\n'

@@ -95,6 +95,9 @@ with left:
     # 한줄 간 간격
     item_gap = st.slider("한줄 간 간격", 0, 250, 20, key="item_gap")
 
+    # 낱개 간 간격
+    solo_gap = st.slider("낱개 간 간격", 0, 100, 10, key="solo_gap")
+
     # 낱개 열 수
     solo_cols = None
     if naalgae_count > 1:
@@ -147,6 +150,7 @@ with right:
                 tray_empty_last_only=tray_empty_last_only,
                 item_gap=item_gap,
                 tray_gap=tray_gap,
+                solo_gap=solo_gap,
             )
 
             svg_inline = svg_out.replace(
