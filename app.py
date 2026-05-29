@@ -26,61 +26,32 @@ left, right = st.columns([1, 1.6], gap="large")
 
 with left:
     st.subheader("조합 설정")
-    mode = st.radio("입력 방식", ["숫자 입력", "수동 조합"],
-                    horizontal=True, label_visibility="collapsed")
+
+    num = st.number_input("나타낼 수 (1–999)", min_value=1, max_value=999,
+                          value=243, step=1, key="main_num")
+
+    # 나타낼 수 변경 시 개별 개수를 자동계산값으로 업데이트
+    if st.session_state.get('_last_main_num') != num:
+        st.session_state['_last_main_num'] = num
+        st.session_state['hp_count'] = num // 100
+        st.session_state['hj_count'] = (num % 100) // 10
+        st.session_state['ng_count'] = num % 10
+
+    c1, c2, c3 = st.columns(3)
+    hanpan_count  = c1.number_input("한판", 0, 9, key="hp_count")
+    hanjul_count  = c2.number_input("한줄", 0, 9, key="hj_count")
+    naalgae_count = c3.number_input("낱개", 0, 9, key="ng_count")
+
     st.divider()
+    st.caption("📝 빈 자리 설정 (문제용 — 0이면 전부 채움)")
 
-    if mode == "숫자 입력":
-        num = st.number_input("나타낼 수 (1–999)", min_value=1, max_value=999,
-                              value=243, step=1)
-        hanpan_count  = num // 100
-        hanjul_count  = (num % 100) // 10
-        naalgae_count = num % 10
+    hanpan_empty = 0
+    hanjul_empty = 0
+    row_empty_mode = "모든 줄 동일"
+    tray_empty_last_only = False
 
-        cols = st.columns(3)
-        cols[0].metric("한판", f"{hanpan_count}개")
-        cols[1].metric("한줄", f"{hanjul_count}개")
-        cols[2].metric("낱개", f"{naalgae_count}개")
-
-        st.divider()
-        st.caption("📝 빈 자리 설정 (문제용 — 0이면 전부 채움)")
-
-        hanpan_empty = 0
-        hanjul_empty = 0
-        row_empty_mode = "모든 줄 동일"
-        tray_empty_last_only = False
-
-        if hanpan_count > 0:
-            hanpan_empty = st.slider("한판 빈 자리 (0–100)", 0, 100, 0, key="hp_e")
-            if hanpan_count > 1 and hanpan_empty > 0:
-                tray_empty_apply = st.radio(
-                    "한판 빈 자리 적용",
-                    ["마지막 판만", "모든 판"],
-                    horizontal=True,
-                    key="tray_empty_apply"
-                )
-                tray_empty_last_only = (tray_empty_apply == "마지막 판만")
-        if hanjul_count > 0:
-            if hanjul_count > 1:
-                row_empty_mode = st.radio(
-                    "한줄 빈 자리 적용",
-                    ["모든 줄 동일", "마지막 줄만", "뒤에서부터"],
-                    horizontal=True, key="row_mode"
-                )
-            else:
-                row_empty_mode = "모든 줄 동일"
-            max_hj = hanjul_count * 10 if row_empty_mode == "뒤에서부터" else 10
-            hanjul_empty = st.slider(f"한줄 빈 자리 (0–{max_hj})",
-                                     0, max_hj, 0, key="hj_e")
-
-    else:
-        row_empty_mode = "모든 줄 동일"
-        tray_empty_last_only = False
-        st.markdown("##### 🟫 한판 (×100)")
-        c1, c2 = st.columns(2)
-        hanpan_count = c1.number_input("개수", 0, 9, 0, key="hp_c")
-        hanpan_empty = c2.number_input("빈 자리", 0, 100, 0, key="hp_e2",
-                                       disabled=(hanpan_count == 0))
+    if hanpan_count > 0:
+        hanpan_empty = st.slider("한판 빈 자리 (0–100)", 0, 100, 0, key="hp_e")
         if hanpan_count > 1 and hanpan_empty > 0:
             tray_empty_apply = st.radio(
                 "한판 빈 자리 적용",
@@ -89,23 +60,18 @@ with left:
                 key="tray_empty_apply"
             )
             tray_empty_last_only = (tray_empty_apply == "마지막 판만")
-
-        st.markdown("##### 🟡 한줄 (×10)")
-        hanjul_count = st.number_input("개수", 0, 9, 0, key="hj_c")
+    if hanjul_count > 0:
         if hanjul_count > 1:
             row_empty_mode = st.radio(
                 "한줄 빈 자리 적용",
                 ["모든 줄 동일", "마지막 줄만", "뒤에서부터"],
-                horizontal=True, key="row_mode2"
+                horizontal=True, key="row_mode"
             )
         else:
             row_empty_mode = "모든 줄 동일"
         max_hj = hanjul_count * 10 if row_empty_mode == "뒤에서부터" else 10
-        hanjul_empty = st.number_input("빈 자리", 0, max(1, max_hj), 0,
-                                       key="hj_e2", disabled=(hanjul_count == 0))
-
-        st.markdown("##### 🥚 낱개 (×1)")
-        naalgae_count = st.number_input("개수", 0, 9, 0, key="ng_c")
+        hanjul_empty = st.slider(f"한줄 빈 자리 (0–{max_hj})",
+                                 0, max_hj, 0, key="hj_e")
 
     st.divider()
 
