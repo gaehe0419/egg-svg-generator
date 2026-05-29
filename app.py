@@ -93,7 +93,7 @@ with left:
             tray_gap = st.slider("판 간격", 0, 200, 40, key="tray_gap")
 
     # 한줄 간 간격
-    item_gap = st.slider("한줄 간 간격", 0, 100, 20, key="item_gap")
+    item_gap = st.slider("한줄 간 간격", 0, 250, 20, key="item_gap")
 
     # 낱개 열 수
     solo_cols = None
