@@ -220,7 +220,8 @@ def parse_cmd(s):
     return results
 
 def build_svg(parsed, tray_stack=True, solo_cols=None,
-              row_empty_mode='모든 줄 동일', tray_empty_last_only=False):
+              row_empty_mode='모든 줄 동일', tray_empty_last_only=False,
+              item_gap=ITEM_GAP, tray_gap=TRAY_GAP):
     _counter[0] = 0
 
     ORDER  = ['한판', '한줄', '낱개']
@@ -264,18 +265,18 @@ def build_svg(parsed, tray_stack=True, solo_cols=None,
         if tray_stack and n > 1:
             tray_block_h = TRAY_H + (n - 1) * TRAY_STACK_OFFSET
         else:
-            tray_block_h = TRAY_H * n + TRAY_GAP * (n - 1)
+            tray_block_h = TRAY_H * n + tray_gap * (n - 1)
 
     if row_items:
         row_block_w = ROW_W
-        row_block_h = ROW_H * len(row_items) + ITEM_GAP * (len(row_items) - 1)
+        row_block_h = ROW_H * len(row_items) + item_gap * (len(row_items) - 1)
 
     n_solo = len(solo_items)
     if solo_items:
         cols = solo_cols if solo_cols and solo_cols > 0 else n_solo
         rows = (n_solo + cols - 1) // cols
-        solo_block_w = cols * SOLO_W + (cols - 1) * (ITEM_GAP * 0.5)
-        solo_block_h = rows * SOLO_H + (rows - 1) * (ITEM_GAP * 0.5)
+        solo_block_w = cols * SOLO_W + (cols - 1) * (item_gap * 0.5)
+        solo_block_h = rows * SOLO_H + (rows - 1) * (item_gap * 0.5)
 
     section_widths, section_heights = [], []
     if tray_items:
@@ -348,7 +349,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None,
                     f'    {inner}\n'
                     f'  </g>'
                 )
-                cy += h + TRAY_GAP
+                cy += h + tray_gap
 
     # ── 한줄 배치 ──────────────────────────────────────────────────────────
     if row_items:
@@ -361,7 +362,7 @@ def build_svg(parsed, tray_stack=True, solo_cols=None,
                 f'    {inner}\n'
                 f'  </g>'
             )
-            cy += h + ITEM_GAP
+            cy += h + item_gap
 
     # ── 낱개 배치 ──────────────────────────────────────────────────────────
     if solo_items:
@@ -371,8 +372,8 @@ def build_svg(parsed, tray_stack=True, solo_cols=None,
         for idx, (elems, w, h) in enumerate(solo_items):
             col_i = idx % cols
             row_i = idx // cols
-            sx = col_i * (SOLO_W + ITEM_GAP * 0.5)
-            sy = row_i * (SOLO_H + ITEM_GAP * 0.5)
+            sx = col_i * (SOLO_W + item_gap * 0.5)
+            sy = row_i * (SOLO_H + item_gap * 0.5)
             inner = '\n      '.join(elems)
             solo_inner.append(
                 f'    <g transform="translate({sx:.3f},{sy:.3f})">\n'

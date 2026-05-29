@@ -17,11 +17,6 @@ st.set_page_config(
 st.markdown("""
 <style>
   .block-container { padding-top: 1.5rem; padding-bottom: 1rem; }
-  .cmd-box {
-    background: #f5f5f5; border-radius: 6px;
-    padding: 8px 12px; font-family: monospace;
-    font-size: 0.9rem; color: #444; margin-bottom: 8px;
-  }
 </style>
 """, unsafe_allow_html=True)
 
@@ -31,86 +26,39 @@ left, right = st.columns([1, 1.6], gap="large")
 
 with left:
     st.subheader("조합 설정")
-    mode = st.radio("입력 방식", ["숫자 입력", "수동 조합"],
-                    horizontal=True, label_visibility="collapsed")
     st.divider()
 
-    if mode == "숫자 입력":
-        num = st.number_input("나타낼 수 (1–999)", min_value=1, max_value=999,
-                              value=243, step=1)
-        hanpan_count  = num // 100
-        hanjul_count  = (num % 100) // 10
-        naalgae_count = num % 10
+    row_empty_mode = "모든 줄 동일"
+    tray_empty_last_only = False
 
-        cols = st.columns(3)
-        cols[0].metric("한판", f"{hanpan_count}개")
-        cols[1].metric("한줄", f"{hanjul_count}개")
-        cols[2].metric("낱개", f"{naalgae_count}개")
+    st.markdown("##### 🟫 한판 (×100)")
+    c1, c2 = st.columns(2)
+    hanpan_count = c1.number_input("개수", 0, 9, 0, key="hp_c")
+    hanpan_empty = c2.number_input("빈 자리", 0, 100, 0, key="hp_e",
+                                   disabled=(hanpan_count == 0))
+    if hanpan_count > 1 and hanpan_empty > 0:
+        tray_empty_apply = st.radio(
+            "한판 빈 자리 적용",
+            ["마지막 판만", "모든 판"],
+            horizontal=True,
+            key="tray_empty_apply"
+        )
+        tray_empty_last_only = (tray_empty_apply == "마지막 판만")
 
-        st.divider()
-        st.caption("📝 빈 자리 설정 (문제용 — 0이면 전부 채움)")
+    st.markdown("##### 🟡 한줄 (×10)")
+    hanjul_count = st.number_input("개수", 0, 9, 0, key="hj_c")
+    if hanjul_count > 1:
+        row_empty_mode = st.radio(
+            "한줄 빈 자리 적용",
+            ["모든 줄 동일", "마지막 줄만", "뒤에서부터"],
+            horizontal=True, key="row_mode"
+        )
+    max_hj = hanjul_count * 10 if row_empty_mode == "뒤에서부터" else 10
+    hanjul_empty = st.number_input("빈 자리", 0, max(1, max_hj), 0,
+                                   key="hj_e", disabled=(hanjul_count == 0))
 
-        hanpan_empty = 0
-        hanjul_empty = 0
-        row_empty_mode = "모든 줄 동일"
-        tray_empty_last_only = False
-
-        if hanpan_count > 0:
-            hanpan_empty = st.slider("한판 빈 자리 (0–100)", 0, 100, 0, key="hp_e")
-            if hanpan_count > 1 and hanpan_empty > 0:
-                tray_empty_apply = st.radio(
-                    "한판 빈 자리 적용",
-                    ["마지막 판만", "모든 판"],
-                    horizontal=True,
-                    key="tray_empty_apply"
-                )
-                tray_empty_last_only = (tray_empty_apply == "마지막 판만")
-        if hanjul_count > 0:
-            if hanjul_count > 1:
-                row_empty_mode = st.radio(
-                    "한줄 빈 자리 적용",
-                    ["모든 줄 동일", "마지막 줄만", "뒤에서부터"],
-                    horizontal=True, key="row_mode"
-                )
-            else:
-                row_empty_mode = "모든 줄 동일"
-            max_hj = hanjul_count * 10 if row_empty_mode == "뒤에서부터" else 10
-            hanjul_empty = st.slider(f"한줄 빈 자리 (0–{max_hj})",
-                                     0, max_hj, 0, key="hj_e")
-
-    else:
-        row_empty_mode = "모든 줄 동일"
-        tray_empty_last_only = False
-        st.markdown("##### 🟫 한판 (×100)")
-        c1, c2 = st.columns(2)
-        hanpan_count = c1.number_input("개수", 0, 9, 0, key="hp_c")
-        hanpan_empty = c2.number_input("빈 자리", 0, 100, 0, key="hp_e2",
-                                       disabled=(hanpan_count == 0))
-        if hanpan_count > 1 and hanpan_empty > 0:
-            tray_empty_apply = st.radio(
-                "한판 빈 자리 적용",
-                ["마지막 판만", "모든 판"],
-                horizontal=True,
-                key="tray_empty_apply"
-            )
-            tray_empty_last_only = (tray_empty_apply == "마지막 판만")
-
-        st.markdown("##### 🟡 한줄 (×10)")
-        hanjul_count = st.number_input("개수", 0, 9, 0, key="hj_c")
-        if hanjul_count > 1:
-            row_empty_mode = st.radio(
-                "한줄 빈 자리 적용",
-                ["모든 줄 동일", "마지막 줄만", "뒤에서부터"],
-                horizontal=True, key="row_mode2"
-            )
-        else:
-            row_empty_mode = "모든 줄 동일"
-        max_hj = hanjul_count * 10 if row_empty_mode == "뒤에서부터" else 10
-        hanjul_empty = st.number_input("빈 자리", 0, max(1, max_hj), 0,
-                                       key="hj_e2", disabled=(hanjul_count == 0))
-
-        st.markdown("##### 🥚 낱개 (×1)")
-        naalgae_count = st.number_input("개수", 0, 9, 0, key="ng_c")
+    st.markdown("##### 🥚 낱개 (×1)")
+    naalgae_count = st.number_input("개수", 0, 9, 0, key="ng_c")
 
     st.divider()
 
@@ -119,6 +67,7 @@ with left:
 
     # 한판 배열 방식 (2개 이상일 때만)
     tray_stack = True
+    tray_gap = egg_svg.TRAY_GAP
     if hanpan_count >= 2:
         tray_mode = st.radio(
             "한판 배열",
@@ -127,17 +76,20 @@ with left:
             key="tray_mode"
         )
         tray_stack = (tray_mode == "겹침 (기본)")
+        if not tray_stack:
+            tray_gap = st.slider("판 간격", 0, 200, 40, key="tray_gap")
+
+    # 한줄 간 간격
+    item_gap = st.slider("한줄 간 간격", 0, 100, 20, key="item_gap")
 
     # 낱개 열 수
     solo_cols = None
     if naalgae_count > 1:
-        col_options = []
-        for c in range(1, naalgae_count + 1):
-            col_options.append(str(c))
+        col_options = [str(c) for c in range(1, naalgae_count + 1)]
         col_label = st.select_slider(
             "낱개 열 수",
             options=col_options,
-            value=str(naalgae_count),  # 기본: 가로 한 줄
+            value=str(naalgae_count),
             key="solo_cols"
         )
         solo_cols = int(col_label)
@@ -163,8 +115,6 @@ with right:
         st.info("왼쪽에서 달걀 구성을 설정해주세요.")
     else:
         cmd = " ".join(cmd_parts)
-        st.markdown(f'<div class="cmd-box">명령어: {cmd}</div>',
-                    unsafe_allow_html=True)
 
         bg_opt = st.radio("배경", ["흰색", "체크무늬"],
                           horizontal=True, key="bg",
@@ -182,6 +132,8 @@ with right:
                 solo_cols=solo_cols,
                 row_empty_mode=row_empty_mode,
                 tray_empty_last_only=tray_empty_last_only,
+                item_gap=item_gap,
+                tray_gap=tray_gap,
             )
 
             svg_inline = svg_out.replace(
